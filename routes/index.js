@@ -4,31 +4,51 @@ const userModel = require("./users");
 const postModel = require("./post");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
-passport.authenticate(new LocalStrategy(userModel.authenticate()));
+passport.use(new LocalStrategy(userModel.authenticate()));
 /* GET home page. */
 router.get("/", function (req, res, next) {
   res.render("index", { title: "Express" });
 });
+router.get("/profile", isLoggedIn, function (req, res) {
+  res.send("welcome to profile");
+});
 
-router.get("/createuser", async function (req, res) {
-  const createduser = await userModel.create({
-    username: "bipin",
-    email: "bj@gmail.com",
-    posts: [],
-    fullname: "bjoshi",
-    password: "abx",
+router.post("/register", function (req, res) {
+  const user = new userModel({
+    username: req.body.username,
+    email: req.body.email,
+    fullname: req.body.fullname,
   });
-  res.send(createduser);
-});
-router.get("/postuser", async function (req, res) {
-  let postuser = await postModel.create({
-    postText: "holo hola",
-    user: "6592da5324116c369d4a214b",
+  userModel.register(user, req.body.password).then(function () {
+    passport.authenticate("local")(req, res, function () {
+      res.redirect("/profile");
+    });
   });
-  let user = await userModel.findOne({ _id: "6592da5324116c369d4a214b" });
-  user.posts.push(postuser._id);
-  await user.save();
-  res.send("done");
 });
+router.get("/login", function (req, res) {
+  res.render("login");
+});
+
+router.post(
+  "/login",
+  passport.authenticate("local", {
+    successRedirect: "/profile",
+    failureRedirect: "/login",
+  })
+);
+
+router.get("/logout", function (req, res, next) {
+  req.logout(function (err) {
+    if (err) {
+      return next(err);
+    }
+    res.redirect("/");
+  });
+});
+// Define the isLoggedIn middleware function
+function isLoggedIn(req, res, next) {
+  if (req.isAuthenticated()) return next();
+  res.redirect("/login");
+}
 
 module.exports = router;

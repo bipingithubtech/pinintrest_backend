@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const plm = require("passport-local-mongoose");
 mongoose.connect("mongodb://127.0.0.1:27017/mydatabase");
 
 // Define the user schema
@@ -25,9 +26,10 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
   },
 });
+
+userSchema.plugin(plm);
 
 // Create the User model
 module.exports = mongoose.model("User", userSchema);
